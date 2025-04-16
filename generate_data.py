@@ -41,7 +41,7 @@ with open("saved_data/chunks.pkl", "wb") as f:
     pickle.dump(chunks, f)
 print(f"Saved {len(chunks)} chunks to saved_data/chunks.pkl")
 
-embeddings = CustomHuggingFaceEmbeddings()
+embeddings = CustomHuggingFaceEmbeddings(model_name='/data/model/maidalun1020/bce-embedding-base_v1')
 
 # Create a FAISS vector store from the document chunks and save it locally
 vectorstore = FAISS.from_documents(chunks, embeddings)
@@ -57,11 +57,11 @@ import rl_helpers  # Ensure you have this or remove if not used
 
 # Load the Llama model (adjust parameters as needed)
 model, tokenizer = FastLanguageModel.from_pretrained(
-    model_name="meta-llama/meta-Llama-3.1-8B-Instruct",
+    model_name="/data/model/Qwen/Qwen2.5-7B-Instruct",
     max_seq_length=4096,
     load_in_4bit=True,       # Use 4-bit quantization if desired
     fast_inference=True,      # Enable fast inference
-    gpu_memory_utilization=0.6  # Adjust based on your GPU memory
+    gpu_memory_utilization=0.8  # Adjust based on your GPU memory
 )
 
 # Define sampling parameters for generation
