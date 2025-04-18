@@ -24,7 +24,7 @@ def load_vectorstore():
     """Load the pre-saved FAISS index"""
     try:
         import os
-        embeddings = CustomHuggingFaceEmbeddings()
+        embeddings = CustomHuggingFaceEmbeddings(model_name='/data/model/maidalun1020/bce-embedding-base_v1')
         # Load the FAISS index with absolute path
         index_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "faiss_index")
         print(f"Loading FAISS index from: {index_path}")

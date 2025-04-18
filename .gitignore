@@ -19,4 +19,5 @@ full_local_training/
 venv/
 oai.key
 qa_log.txt
+.wandb_api_key
 __pycache__/

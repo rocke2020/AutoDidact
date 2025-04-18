@@ -14,6 +14,7 @@ from dataclasses import dataclass
 import nest_asyncio
 nest_asyncio.apply()
 from typing import List, Callable
+from loguru import logger
 
 
 from trl.trainer.grpo_trainer import apply_chat_template
@@ -237,6 +238,7 @@ def run_tool_calls(chat_states):
     return chat_states
 
 def get_mask(text, tokenizer):
+    """ Only keep the assistant tokens in the mask, that's 1, others 0. """
     encoding = tokenizer(text, add_special_tokens=False)
     start_header_id = tokenizer.convert_tokens_to_ids("<|start_header_id|>")
     assistant_token = tokenizer.convert_tokens_to_ids("assistant")
@@ -315,8 +317,9 @@ def run_agent(generate_fn, tokenizer, questions, max_generations=5, max_new_toke
     for chat in chat_states:
         answers.append(chat["messages"][-1]["content"])
 
-    def split_prompt_assistant(convo_text):
+    def split_prompt_assistant(convo_text: str):
         marker = "<|start_header_id|>assistant<|end_header_id|>"
+        logger.info(f'{convo_text.count(marker) = }')
         idx = convo_text.find(marker)
         if idx == -1:
             raise ValueError("Could not find assistant marker in conversation text.")
@@ -465,8 +468,6 @@ def reward_formatting(prompts, completions, **reward_kwargs):
                 has_error[i] = True
                 break
     return [0.7 if not e else 0 for e in has_error]
-
-
 
 
 def run_eval(generate_fn, verify_fn, tokenizer):

@@ -16,8 +16,9 @@ os.environ["WANDB_PROJECT"] = "bootstrap-search-rl"
 max_seq_length = 4096 * 2  # Can increase for longer reasoning traces
 lora_rank = 64  # Larger rank = smarter, but slower
 
+# author use meta-llama/meta-Llama-3.1-8B-Instruct
 model, tokenizer = FastLanguageModel.from_pretrained(
-    model_name="/data/model/Qwen/Qwen2.5-7B-Instruct",
+    model_name="/data/model/LLM-Research/Meta-Llama-3.1-8B-Instruct",
     max_seq_length=max_seq_length,
     load_in_4bit=True,  # False for LoRA 16bit
     fast_inference=True,  # Enable vLLM fast inference
@@ -79,7 +80,7 @@ training_args = UnslothGRPOTrainerTemp.UnslothGRPOConfig(
     max_steps=101,
     save_steps=50,
     max_grad_norm=0.1,
-    report_to="none",  # Can use Weights & Biases
+    report_to="wandb",  # Can use Weights & Biases
     output_dir="full_local_training",
 )
 
@@ -103,8 +104,6 @@ reward_correctness = rl_helpers.build_reward_correctness_fn(
     tokenizer,
 )
 reward_formatting = rl_helpers.reward_formatting
-
-
 trainer = UnslothGRPOTrainerTemp.UnslothGRPOTrainer(
     model=model,
     processing_class=tokenizer,
