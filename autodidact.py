@@ -2,6 +2,7 @@ from unsloth import FastLanguageModel
 from unsloth import is_bfloat16_supported
 import torch
 import re
+from torch import nn
 from datasets import load_dataset, Dataset
 from search_module import search, get_question_answer, get_question_count
 from rl_helpers import get_qa_dataset
@@ -98,11 +99,12 @@ def verifier_generate_fn(inputs):
         sampling_params=verifier_sampling_params,
     )
 
-
+# type(reward_correctness) = <class 'function'>, not nn.Module
 reward_correctness = rl_helpers.build_reward_correctness_fn(
     verifier_generate_fn,
     tokenizer,
 )
+
 reward_formatting = rl_helpers.reward_formatting
 trainer = UnslothGRPOTrainerTemp.UnslothGRPOTrainer(
     model=model,

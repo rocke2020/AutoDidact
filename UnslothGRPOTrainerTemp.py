@@ -120,7 +120,6 @@ def grpo_compute_loss(old_logits, new_logits, input_ids, mask, beta, advantages)
     old_logits = old_logits.to(torch.float32)
     new_logits = new_logits.to(torch.float32)
     input_ids = input_ids.unsqueeze(-1)
-
     # x_i - logsumexp(x_i)
     old_x = torch.gather(old_logits, dim=-1, index=input_ids).squeeze(-1)
     new_x = torch.gather(new_logits, dim=-1, index=input_ids).squeeze(-1)
@@ -364,7 +363,10 @@ def grpo_accumulated_loss(
         new_hidden_states = trainer.model(
             input_ids=input_ids, logits_to_keep=logits_to_keep + 1
         ).logits
-
+        # new_hidden_states.shape = torch.Size([8, 674, 4096]) 
+        # old_hidden_states.shape = torch.Size([8, 674, 4096]) 
+        # lm_head.shape = torch.Size([128256, 4096])
+        logger.info(f'{new_hidden_states.shape = } {old_hidden_states.shape = } {lm_head.shape = } {completion_input_ids.shape = } {completion_mask.shape = } {advantages.shape = }')
         loss, completion_length, mean_kl = UnslothEfficientGRPO.apply(
             new_hidden_states,
             old_hidden_states,
@@ -1164,8 +1166,13 @@ class _UnslothGRPOTrainer(Trainer):
         return None
 
     def _prepare_inputs(
-        self, inputs: dict[str, Union[torch.Tensor, Any]]
+        self, inputs: list[dict[str, Union[torch.Tensor, Any]]]
     ) -> dict[str, Union[torch.Tensor, Any]]:
+        # type(inputs) = <class 'list'> type(inputs[0]) = <class 'dict'>
+        # logger.info(f'{type(inputs) = } {type(inputs[0]) = }')
+        # keys = [key for key in inputs[0]]
+        # ['chunk_id', 'prompt', 'answer', 'difficulty']
+        # logger.info(f'{keys = }')
         device = self.accelerator.device
         prompts = [x["prompt"] for x in inputs]
         prompts_text = [
@@ -1199,7 +1206,7 @@ class _UnslothGRPOTrainer(Trainer):
             # Generate completions using vLLM: gather all prompts and use them in a single call in the main process
             all_prompts_text = gather_object(prompts_text)
             if self.accelerator.is_main_process:
-                print(all_prompts_text)
+                print(f'{all_prompts_text = }')
                 generate_fn = lambda prompts_text: self.llm.generate(
                     prompts_text,
                     sampling_params=self.sampling_params,
@@ -1418,7 +1425,8 @@ class _UnslothGRPOTrainer(Trainer):
         #     rewards = torch.tensor(rewards, dtype=torch.float16, device=device)
         #     rewards_per_func = rewards.unsqueeze(1)
 
-        # Compute grouped-wise rewards
+        # Compute grouped-wise rewards, rewards.shape = torch.Size([8])
+        logger.info(f'{rewards.shape = }')
         mean_grouped_rewards = rewards.view(-1, self.num_generations).mean(dim=1)
         std_grouped_rewards = rewards.view(-1, self.num_generations).std(dim=1)
 
@@ -1440,7 +1448,8 @@ class _UnslothGRPOTrainer(Trainer):
 
         # Log the metrics
         reward_per_func = rewards_per_func.mean(0)
-        print("rewards_per_func:", reward_per_func)
+        # rewards_per_func: tensor([0.2500, 0.3500], device='cuda:0')
+        # print("rewards_per_func:", reward_per_func)
         for i, reward_func in enumerate(self.reward_funcs):
             if isinstance(
                 reward_func, nn.Module
@@ -1518,6 +1527,8 @@ class _UnslothGRPOTrainer(Trainer):
         # per_token_loss = -(per_token_loss - self.beta * per_token_kl)
         # loss = ((per_token_loss * completion_mask).sum(dim=1) / completion_mask.sum(dim=1)).mean()
         input_ids = input_ids[:, -logits_to_keep:]
+        # input_ids.shape = torch.Size([8, 673]), _input_ids.shape = torch.Size([8, 974])
+        logger.info(f'{input_ids.shape = }, {_input_ids.shape = }')
         if False:  # per_token_logps is not None:
             loss, completion_length, mean_kl = grpo_compute_loss(
                 ref_per_token_logps,

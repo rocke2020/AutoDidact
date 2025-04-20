@@ -10,7 +10,7 @@ import asyncio
 from typing import List, Tuple, Optional, Union, Dict, Any
 from enum import Enum
 from pydantic import BaseModel
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 from datasets import Dataset
 from embeddings import CustomHuggingFaceEmbeddings
 
@@ -178,3 +178,13 @@ def get_qa_dataset():
     train_dataset = train_dataset.rename_column("question", "prompt")
     test_dataset = test_dataset.rename_column("question", "prompt")
     return train_dataset, test_dataset
+
+
+if __name__ == "__main__":
+    train_dataset, test_dataset = get_qa_dataset()
+    print(f"Train dataset size: {len(train_dataset)}")
+    print(f"Test dataset size: {len(test_dataset)}")
+    print(f"First question in train dataset: {train_dataset[0]}")
+    print(f"First answer in train dataset: {train_dataset[0]['answer']}")
+    print(f"First question in test dataset: {test_dataset[0]['prompt']}")
+    print(f"First answer in test dataset: {test_dataset[0]['answer']}")

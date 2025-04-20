@@ -342,6 +342,7 @@ def run_agent(generate_fn, tokenizer, questions, max_generations=5, max_new_toke
 
     final_response_str = [chat["messages"][-1]["content"] for chat in chat_states]
     full_chat_states = chat_states
+    logger.info(f'{len(full_chat_states) = } {full_chat_states[0] = }')
     agentic_outputs = AgenticOutputs(prompt_tokens=prompt_toks, response_tokens=response_toks, response_masks=response_masks, final_response_str=final_response_str, full_chat_states=full_chat_states)
 
     return agentic_outputs
